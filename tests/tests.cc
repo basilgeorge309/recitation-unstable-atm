@@ -74,3 +74,40 @@ TEST_CASE("Example: Print Prompt Ledger", "[ex-3]") {
   atm.PrintLedger("./prompt.txt", 12345678, 1234);
   REQUIRE(CompareFiles("./ex-1.txt", "./prompt.txt"));
 }
+TEST_CASE("RegisterAccount should reject duplicate accounts", "[register]") {
+  Atm atm;
+  atm.RegisterAccount(1111, 2222, "Alice", 100.0);
+  REQUIRE_THROWS_AS(atm.RegisterAccount(1111, 2222, "Alice", 200.0), std::invalid_argument);
+}
+
+TEST_CASE("WithdrawCash should reject negative and excessive withdrawals", "[withdraw]") {
+  Atm atm;
+  atm.RegisterAccount(1234, 5678, "Bob", 50.0);
+  REQUIRE_THROWS_AS(atm.WithdrawCash(1234, 5678, -10.0), std::invalid_argument);
+  REQUIRE_THROWS_AS(atm.WithdrawCash(1234, 5678, 100.0), std::runtime_error);
+  atm.WithdrawCash(1234, 5678, 20.0);
+  REQUIRE(atm.CheckBalance(1234, 5678) == Approx(30.0));
+}
+
+TEST_CASE("DepositCash should reject negative deposits", "[deposit]") {
+  Atm atm;
+  atm.RegisterAccount(2222, 3333, "Charlie", 0.0);
+
+  REQUIRE_THROWS_AS(atm.DepositCash(2222, 3333, -50.0), std::invalid_argument);
+
+  atm.DepositCash(2222, 3333, 100.0);
+  REQUIRE(atm.CheckBalance(2222, 3333) == Approx(100.0));
+}
+
+  TEST_CASE("PrintLedger generates correct ledger", "[ledger]") {
+  Atm atm;
+  atm.RegisterAccount(11112222, 2222, "Alice", 1000.0);
+  atm.DepositCash(11112222, 2222, 500.0);
+  atm.WithdrawCash(11112222, 2222, 200.0);
+
+  atm.PrintLedger("./ledger_out.txt", 11112222, 2222);
+
+
+  REQUIRE(CompareFiles("./ledger_expected.txt", "./ledger_out.txt"));
+}
+
